@@ -15,23 +15,31 @@
         .header h1 { color: #333; }
         .btn { display: inline-block; padding: 0.8rem 1.5rem; background: #667eea; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; }
         .btn:hover { background: #5568d3; }
+        .btn-secondary { background: #6c757d; }
         .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .stat-card { background: white; padding: 1.5rem; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
         .stat-number { font-size: 2rem; font-weight: bold; color: #667eea; }
         .stat-label { color: #666; }
         .section { background: white; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .section h2 { color: #333; margin-bottom: 1.5rem; }
-        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
         .item-card { border: 2px solid #eee; border-radius: 12px; overflow: hidden; transition: 0.3s; }
-        .item-card:hover { border-color: #667eea; }
-        .item-image { width: 100%; height: 150px; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .item-card:hover { border-color: #667eea; transform: translateY(-3px); box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .item-image { width: 100%; height: 200px; object-fit: cover; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; }
+        .item-image img { width: 100%; height: 200px; object-fit: cover; }
+        .item-image-placeholder { font-size: 4rem; color: white; }
         .item-content { padding: 1rem; }
         .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
         .badge-lost { background: #fee; color: #c00; }
         .badge-found { background: #efe; color: #060; }
-        .item-title { margin: 0.5rem 0; color: #333; }
-        .item-meta { color: #666; font-size: 0.85rem; }
+        .badge-match { background: #fff3cd; color: #856404; }
+        .item-title { margin: 0.5rem 0; color: #333; font-size: 1.1rem; }
+        .item-meta { color: #666; font-size: 0.85rem; margin-bottom: 0.5rem; }
         .item-link { display: block; text-decoration: none; color: #667eea; font-weight: 600; margin-top: 0.5rem; }
+        .item-link:hover { color: #5568d3; }
+        .similarity-score { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; }
+        .empty-state { text-align: center; padding: 3rem; color: #666; }
+        .empty-state-icon { font-size: 4rem; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
@@ -47,7 +55,9 @@
     <div class="container">
         <div class="header">
             <h1>Welcome, {{ user.name }}! 👋</h1>
-            <a href="/report?user_id={{ user.id }}" class="btn">+ Report Item</a>
+            <div>
+                <a href="/report?user_id={{ user.id }}" class="btn">+ Report Item</a>
+            </div>
         </div>
         
         <div class="stats">
@@ -67,36 +77,74 @@
         
         <div class="section">
             <h2>📢 Recent Lost Items</h2>
+            {% if lost_items %}
             <div class="items-grid">
                 {% for item in lost_items %}
                 <div class="item-card">
-                    <div class="item-image">📦</div>
+                    {% if item.image_path %}
+                    <div class="item-image">
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" alt="{{ item.title }}">
+                    </div>
+                    {% else %}
+                    <div class="item-image">
+                        <span class="item-image-placeholder">📦</span>
+                    </div>
+                    {% endif %}
                     <div class="item-content">
-                        <span class="badge badge-lost">Lost</span>
+                        <span class="badge badge-lost">🔴 Lost</span>
                         <h3 class="item-title">{{ item.title }}</h3>
-                        <p class="item-meta">📍 {{ item.campus_area }} • {{ item.item_type }}</p>
+                        <p class="item-meta">📍 {{ item.campus_area or 'Not specified' }}</p>
+                        <p class="item-meta">📱 {{ item.item_type or 'General' }}</p>
+                        {% if item.image_hash %}
+                        <span class="similarity-score">🧠 AI Match Enabled</span>
+                        {% endif %}
                         <a href="/item/{{ item.id }}?user_id={{ user.id }}" class="item-link">View Details →</a>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <p>No lost items reported yet.</p>
+            </div>
+            {% endif %}
         </div>
         
         <div class="section">
             <h2>✨ Recent Found Items</h2>
+            {% if found_items %}
             <div class="items-grid">
                 {% for item in found_items %}
                 <div class="item-card">
-                    <div class="item-image">📦</div>
+                    {% if item.image_path %}
+                    <div class="item-image">
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" alt="{{ item.title }}">
+                    </div>
+                    {% else %}
+                    <div class="item-image">
+                        <span class="item-image-placeholder">📦</span>
+                    </div>
+                    {% endif %}
                     <div class="item-content">
-                        <span class="badge badge-found">Found</span>
+                        <span class="badge badge-found">🟢 Found</span>
                         <h3 class="item-title">{{ item.title }}</h3>
-                        <p class="item-meta">📍 {{ item.campus_area }} • {{ item.item_type }}</p>
+                        <p class="item-meta">📍 {{ item.campus_area or 'Not specified' }}</p>
+                        <p class="item-meta">📱 {{ item.item_type or 'General' }}</p>
+                        {% if item.image_hash %}
+                        <span class="similarity-score">🧠 AI Match Enabled</span>
+                        {% endif %}
                         <a href="/item/{{ item.id }}?user_id={{ user.id }}" class="item-link">View Details →</a>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <p>No found items reported yet.</p>
+            </div>
+            {% endif %}
         </div>
         
         {% if my_items %}
@@ -105,13 +153,24 @@
             <div class="items-grid">
                 {% for item in my_items %}
                 <div class="item-card">
-                    <div class="item-image">📦</div>
+                    {% if item.image_path %}
+                    <div class="item-image">
+                        <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" alt="{{ item.title }}">
+                    </div>
+                    {% else %}
+                    <div class="item-image">
+                        <span class="item-image-placeholder">📦</span>
+                    </div>
+                    {% endif %}
                     <div class="item-content">
                         <span class="badge {% if item.category == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
-                            {{ item.category|upper }}
+                            {% if item.category == 'lost' %}🔴{% else %}🟢{% endif %} {{ item.category|upper }}
                         </span>
                         <h3 class="item-title">{{ item.title }}</h3>
-                        <p class="item-meta">Status: {{ item.status }}</p>
+                        <p class="item-meta">Status: <strong>{{ item.status }}</strong></p>
+                        {% if item.image_hash %}
+                        <span class="similarity-score">🧠 AI Analyzed</span>
+                        {% endif %}
                         <a href="/item/{{ item.id }}?user_id={{ user.id }}" class="item-link">View Details →</a>
                     </div>
                 </div>

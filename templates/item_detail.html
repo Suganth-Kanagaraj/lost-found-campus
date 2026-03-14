@@ -7,110 +7,135 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background: #f5f5f5; }
-        .navbar { background: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .navbar { background: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
         .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        .nav-links a { text-decoration: none; color: #333; margin-left: 1.5rem; }
         .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
         .item-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .item-image { width: 100%; height: 400px; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 8rem; }
+        .item-image { width: 100%; height: 400px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; }
+        .item-image img { width: 100%; height: 400px; object-fit: contain; }
+        .item-image-placeholder { font-size: 8rem; color: white; }
         .item-content { padding: 2rem; }
-        .badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
+        .badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 20px; font-size: 1rem; font-weight: bold; }
         .badge-lost { background: #fee; color: #c00; }
         .badge-found { background: #efe; color: #060; }
-        .item-title { font-size: 2rem; color: #333; margin: 1rem 0; }
-        .item-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+        .item-title { margin: 1rem 0; color: #333; font-size: 2rem; }
+        .item-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
         .detail-item { background: #f9f9f9; padding: 1rem; border-radius: 10px; }
-        .detail-label { color: #666; font-size: 0.85rem; margin-bottom: 0.25rem; }
-        .detail-value { color: #333; font-weight: 600; }
-        .description { margin: 1.5rem 0; padding: 1.5rem; background: #f9f9f9; border-radius: 10px; }
-        .description h3 { color: #333; margin-bottom: 0.5rem; }
-        .actions { display: flex; gap: 1rem; margin-top: 2rem; }
-        .btn { flex: 1; padding: 1rem; text-align: center; text-decoration: none; border-radius: 10px; font-weight: 600; transition: 0.3s; }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5568d3; }
-        .btn-secondary { background: #e0e0e0; color: #333; }
-        .btn-secondary:hover { background: #d0d0d0; }
-        .matches { margin-top: 2rem; }
-        .matches h3 { color: #333; margin-bottom: 1rem; }
-        .match-card { display: flex; gap: 1rem; padding: 1rem; background: #fff3cd; border-radius: 10px; margin-bottom: 1rem; border-left: 4px solid #ffc107; }
-        .match-icon { font-size: 2rem; }
-        .match-info { flex: 1; }
-        .match-title { font-weight: 600; color: #333; }
-        .match-similarity { color: #856404; font-size: 0.9rem; }
+        .detail-label { color: #666; font-size: 0.9rem; }
+        .detail-value { color: #333; font-weight: 600; margin-top: 0.3rem; }
+        .item-description { margin: 1.5rem 0; padding: 1.5rem; background: #f9f9f9; border-radius: 10px; }
+        .item-description h3 { color: #333; margin-bottom: 0.5rem; }
+        .ai-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 15px; margin-top: 1.5rem; }
+        .ai-section h3 { margin-bottom: 1rem; }
+        .match-card { background: white; color: #333; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; }
+        .match-image { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; background: #eee; }
+        .match-image-placeholder { width: 80px; height: 80px; border-radius: 10px; background: #667eea; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        .similarity-badge { background: #667eea; color: white; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.9rem; }
+        .back-link { display: inline-block; margin-bottom: 1rem; color: #667eea; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+        .action-buttons { margin-top: 1.5rem; display: flex; gap: 1rem; }
+        .btn { display: inline-block; padding: 1rem 2rem; background: #667eea; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; }
+        .btn:hover { background: #5568d3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <div class="logo">🎓 Campus Lost & Found</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/search?q=">Browse All</a>
+            {% if user %}
+            <a href="/dashboard?user_id={{ user.id }}">Dashboard</a>
+            {% else %}
+            <a href="/login">Login</a>
+            {% endif %}
+        </div>
     </nav>
     
     <div class="container">
+        <a href="javascript:history.back()" class="back-link">← Back</a>
+        
         <div class="item-card">
-            <div class="item-image">📦</div>
+            {% if item.image_path %}
+            <div class="item-image">
+                <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" alt="{{ item.title }}">
+            </div>
+            {% else %}
+            <div class="item-image">
+                <span class="item-image-placeholder">📦</span>
+            </div>
+            {% endif %}
+            
             <div class="item-content">
                 <span class="badge {% if item.category == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
-                    {{ item.category|upper }}
+                    {% if item.category == 'lost' %}🔴 Lost{% else %}🟢 Found{% endif %}
                 </span>
+                
                 <h1 class="item-title">{{ item.title }}</h1>
                 
                 <div class="item-details">
                     <div class="detail-item">
-                        <div class="detail-label">📍 Location</div>
-                        <div class="detail-value">{{ item.campus_area }}</div>
+                        <div class="detail-label">📍 Campus Area</div>
+                        <div class="detail-value">{{ item.campus_area or 'Not specified' }}</div>
                     </div>
                     <div class="detail-item">
-                        <div class="detail-label">🏷️ Category</div>
-                        <div class="detail-value">{{ item.item_type }}</div>
+                        <div class="detail-label">📱 Item Type</div>
+                        <div class="detail-value">{{ item.item_type or 'General' }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">📌 Location</div>
+                        <div class="detail-value">{{ item.location or 'Not specified' }}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">📅 Reported On</div>
-                        <div class="detail-value">{{ item.created_at.strftime('%B %d, %Y') }}</div>
+                        <div class="detail-value">{{ item.created_at.strftime('%Y-%m-%d') if item.created_at else 'Unknown' }}</div>
                     </div>
+                    {% if item.image_hash %}
                     <div class="detail-item">
-                        <div class="detail-label">👤 Reported By</div>
-                        <div class="detail-value">{{ item.reporter.name }}</div>
+                        <div class="detail-label">🧠 AI Analysis</div>
+                        <div class="detail-value" style="color: #667eea;">Image Analyzed</div>
                     </div>
+                    {% endif %}
                 </div>
                 
                 {% if item.description %}
-                <div class="description">
-                    <h3>Description</h3>
+                <div class="item-description">
+                    <h3>📝 Description</h3>
                     <p>{{ item.description }}</p>
                 </div>
                 {% endif %}
                 
-                {% if item.location %}
-                <div class="detail-item">
-                    <div class="detail-label">📍 Specific Location</div>
-                    <div class="detail-value">{{ item.location }}</div>
+                {% if user %}
+                <div class="action-buttons">
+                    {% if item.category == 'found' %}
+                    <a href="#" class="btn btn-success">✅ Claim This Item</a>
+                    {% endif %}
+                    <a href="/dashboard?user_id={{ user.id }}" class="btn">← Back to Dashboard</a>
                 </div>
                 {% endif %}
-                
-                <div class="actions">
-                    {% if user %}
-                        {% if item.category == 'lost' %}
-                        <a href="#" class="btn btn-primary">📞 Contact Owner</a>
-                        {% else %}
-                        <a href="#" class="btn btn-primary">📞 I Own This</a>
-                        {% endif %}
-                    {% else %}
-                        <a href="/login" class="btn btn-primary">Login to Contact</a>
-                    {% endif %}
-                    <a href="/search" class="btn btn-secondary">← Back to Search</a>
-                </div>
             </div>
         </div>
         
         {% if matches %}
-        <div class="matches">
-            <h3>🔔 Similar Items Found!</h3>
+        <div class="ai-section">
+            <h3>🤖 AI-Powered Matches</h3>
+            <p>Based on image similarity analysis, these items might be related:</p>
+            
             {% for match in matches %}
             <div class="match-card">
-                <div class="match-icon">🎯</div>
-                <div class="match-info">
-                    <div class="match-title">{{ match.item.title }}</div>
-                    <div class="match-similarity">Similarity: {{ "%.0f"|format(match.similarity) }}%</div>
+                {% if match.found_item.image_path if match.found_item else match.lost_item.image_path %}
+                <img class="match-image" src="{{ url_for('static', filename='uploads/' + (match.found_item.image_path if match.found_item else match.lost_item.image_path)) }}">
+                {% else %}
+                <div class="match-image-placeholder">📦</div>
+                {% endif %}
+                <div style="flex: 1;">
+                    <strong>{{ (match.found_item.title if match.found_item else match.lost_item.title) }}</strong>
+                    <p>{{ (match.found_item.campus_area if match.found_item else match.lost_item.campus_area) }}</p>
                 </div>
-                <a href="/item/{{ match.item.id }}" class="btn btn-secondary" style="flex: none; padding: 0.5rem 1rem;">View</a>
+                <span class="similarity-badge">{{ "%.0f"|format(match.similarity) }}% Match</span>
             </div>
             {% endfor %}
         </div>
