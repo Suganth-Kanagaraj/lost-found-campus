@@ -57,13 +57,54 @@
             <p class="subtitle">Help reunite lost items with their owners</p>
             
             <div class="ai-note">
-                <h4>🧠 AI-Powered Matching</h4>
+                <h4>🧠 AI-Powered Features</h4>
                 <ul>
-                    <li>Upload a photo to enable automatic matching</li>
-                    <li>Our AI will find similar items reported by others</li>
-                    <li>Get notified when potential matches are found</li>
+                    <li><strong>Auto-Categorization:</strong> AI automatically suggests item type based on your title</li>
+                    <li><strong>Smart Matching:</strong> AI finds similar items automatically</li>
+                    <li><strong>Image Analysis:</strong> Upload photos for better matching</li>
                 </ul>
             </div>
+            <div id="ai-prediction" style="display:none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                <h4>🤖 AI Prediction: <span id="predicted-category">-</span></h4>
+                <p style="font-size: 0.9rem; opacity: 0.9;">AI automatically suggested this category based on your title</p>
+            </div>
+            
+            <script>
+            let debounceTimer;
+            function predictCategory() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const title = document.querySelector('input[name="title"]').value;
+                    const desc = document.querySelector('textarea[name="description"]').value;
+                    if (title.length > 2) {
+                        fetch('/api/ai/predict-category', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({title: title, description: desc})
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.predicted_category) {
+                                document.getElementById('ai-prediction').style.display = 'block';
+                                document.getElementById('predicted-category').textContent = data.predicted_category;
+                                // Auto-select the predicted category if not already selected
+                                const select = document.querySelector('select[name="item_type"]');
+                                if (!select.value) {
+                                    for(let opt of select.options) {
+                                        if(opt.text.toLowerCase().includes(data.predicted_category.toLowerCase())) {
+                                            select.value = opt.value;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        })
+                        .catch(() => {});
+                    }
+                }, 500);
+            }
+            document.querySelector('input[name="title"]')?.addEventListener('input', predictCategory);
+            </script>
             
             <form method="POST" enctype="multipart/form-data">
                 <div class="category-toggle">

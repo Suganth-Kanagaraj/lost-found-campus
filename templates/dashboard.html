@@ -74,6 +74,10 @@
                 <div class="stat-number">{{ found_items|length }}</div>
                 <div class="stat-label">Found Items</div>
             </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                <div class="stat-number">🧠</div>
+                <div class="stat-label">AI Active</div>
+            </div>
         </div>
         
         <div class="section">
@@ -97,7 +101,9 @@
                         <p class="item-meta">📍 {{ item.campus_area or 'Not specified' }}</p>
                         <p class="item-meta">📱 {{ item.item_type or 'General' }}</p>
                         {% if item.image_hash %}
-                        <span class="similarity-score">🧠 AI Match Enabled</span>
+                        <span class="similarity-score">🧠 AI Analyzed</span>
+                        {% else %}
+                        <span class="similarity-score" style="background:#ccc;">📷 No Image</span>
                         {% endif %}
                         <a href="/item/{{ item.id }}?user_id={{ user.id }}" class="item-link">View Details →</a>
                     </div>
