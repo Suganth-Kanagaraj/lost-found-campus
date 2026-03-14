@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ item.title }} - Campus Lost & Found</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f5f5f5; }
+        .navbar { background: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        .item-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .item-image { width: 100%; height: 400px; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 8rem; }
+        .item-content { padding: 2rem; }
+        .badge { display: inline-block; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
+        .badge-lost { background: #fee; color: #c00; }
+        .badge-found { background: #efe; color: #060; }
+        .item-title { font-size: 2rem; color: #333; margin: 1rem 0; }
+        .item-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+        .detail-item { background: #f9f9f9; padding: 1rem; border-radius: 10px; }
+        .detail-label { color: #666; font-size: 0.85rem; margin-bottom: 0.25rem; }
+        .detail-value { color: #333; font-weight: 600; }
+        .description { margin: 1.5rem 0; padding: 1.5rem; background: #f9f9f9; border-radius: 10px; }
+        .description h3 { color: #333; margin-bottom: 0.5rem; }
+        .actions { display: flex; gap: 1rem; margin-top: 2rem; }
+        .btn { flex: 1; padding: 1rem; text-align: center; text-decoration: none; border-radius: 10px; font-weight: 600; transition: 0.3s; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-secondary { background: #e0e0e0; color: #333; }
+        .btn-secondary:hover { background: #d0d0d0; }
+        .matches { margin-top: 2rem; }
+        .matches h3 { color: #333; margin-bottom: 1rem; }
+        .match-card { display: flex; gap: 1rem; padding: 1rem; background: #fff3cd; border-radius: 10px; margin-bottom: 1rem; border-left: 4px solid #ffc107; }
+        .match-icon { font-size: 2rem; }
+        .match-info { flex: 1; }
+        .match-title { font-weight: 600; color: #333; }
+        .match-similarity { color: #856404; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🎓 Campus Lost & Found</div>
+    </nav>
+    
+    <div class="container">
+        <div class="item-card">
+            <div class="item-image">📦</div>
+            <div class="item-content">
+                <span class="badge {% if item.category == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+                    {{ item.category|upper }}
+                </span>
+                <h1 class="item-title">{{ item.title }}</h1>
+                
+                <div class="item-details">
+                    <div class="detail-item">
+                        <div class="detail-label">📍 Location</div>
+                        <div class="detail-value">{{ item.campus_area }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">🏷️ Category</div>
+                        <div class="detail-value">{{ item.item_type }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">📅 Reported On</div>
+                        <div class="detail-value">{{ item.created_at.strftime('%B %d, %Y') }}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">👤 Reported By</div>
+                        <div class="detail-value">{{ item.reporter.name }}</div>
+                    </div>
+                </div>
+                
+                {% if item.description %}
+                <div class="description">
+                    <h3>Description</h3>
+                    <p>{{ item.description }}</p>
+                </div>
+                {% endif %}
+                
+                {% if item.location %}
+                <div class="detail-item">
+                    <div class="detail-label">📍 Specific Location</div>
+                    <div class="detail-value">{{ item.location }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="actions">
+                    {% if user %}
+                        {% if item.category == 'lost' %}
+                        <a href="#" class="btn btn-primary">📞 Contact Owner</a>
+                        {% else %}
+                        <a href="#" class="btn btn-primary">📞 I Own This</a>
+                        {% endif %}
+                    {% else %}
+                        <a href="/login" class="btn btn-primary">Login to Contact</a>
+                    {% endif %}
+                    <a href="/search" class="btn btn-secondary">← Back to Search</a>
+                </div>
+            </div>
+        </div>
+        
+        {% if matches %}
+        <div class="matches">
+            <h3>🔔 Similar Items Found!</h3>
+            {% for match in matches %}
+            <div class="match-card">
+                <div class="match-icon">🎯</div>
+                <div class="match-info">
+                    <div class="match-title">{{ match.item.title }}</div>
+                    <div class="match-similarity">Similarity: {{ "%.0f"|format(match.similarity) }}%</div>
+                </div>
+                <a href="/item/{{ match.item.id }}" class="btn btn-secondary" style="flex: none; padding: 0.5rem 1rem;">View</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

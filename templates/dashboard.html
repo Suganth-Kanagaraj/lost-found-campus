@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Campus Lost & Found</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f5f5f5; }
+        .navbar { background: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        .nav-links a { text-decoration: none; color: #333; margin-left: 1.5rem; }
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .header h1 { color: #333; }
+        .btn { display: inline-block; padding: 0.8rem 1.5rem; background: #667eea; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; border: none; cursor: pointer; }
+        .btn:hover { background: #5568d3; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #667eea; }
+        .stat-label { color: #666; }
+        .section { background: white; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section h2 { color: #333; margin-bottom: 1.5rem; }
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+        .item-card { border: 2px solid #eee; border-radius: 12px; overflow: hidden; transition: 0.3s; }
+        .item-card:hover { border-color: #667eea; }
+        .item-image { width: 100%; height: 150px; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
+        .item-content { padding: 1rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-lost { background: #fee; color: #c00; }
+        .badge-found { background: #efe; color: #060; }
+        .item-title { margin: 0.5rem 0; color: #333; }
+        .item-meta { color: #666; font-size: 0.85rem; }
+        .item-link { display: block; text-decoration: none; color: #667eea; font-weight: 600; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🎓 Campus Lost & Found</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/search?q=">Browse All</a>
+            <a href="/login">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Welcome, {{ user.name }}! 👋</h1>
+            <a href="/report?user_id={{ user.id }}" class="btn">+ Report Item</a>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ my_items|length }}</div>
+                <div class="stat-label">Your Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ lost_items|length }}</div>
+                <div class="stat-label">Lost Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ found_items|length }}</div>
+                <div class="stat-label">Found Items</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📢 Recent Lost Items</h2>
+            <div class="items-grid">
+                {% for item in lost_items %}
+                <div class="item-card">
+                    <div class="item-image">📦</div>
+                    <div class="item-content">
+                        <span class="badge badge-lost">Lost</span>
+                        <h3 class="item-title">{{ item.title }}</h3>
+                        <p class="item-meta">📍 {{ item.campus_area }} • {{ item.item_type }}</p>
+                        <a href="/item/{{ item.id }}?user_id={{ user.id }}" class="item-link">View Details →</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>✨ Recent Found Items</h2>
+            <div class="items-grid">
+                {% for item in found_items %}
+                <div class="item-card">
+                    <div class="item-image">📦</div>
+                    <div class="item-content">
+                        <span class="badge badge-found">Found</span>
+                        <h3 class="item-title">{{ item.title }}</h3>
+                        <p class="item-meta">📍 {{ item.campus_area }} • {{ item.item_type }}</p>
+                        <a href="/item/{{ item.id }}?user_id={{ user.id }}" class="item-link">View Details →</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        {% if my_items %}
+        <div class="section">
+            <h2>📋 Your Reported Items</h2>
+            <div class="items-grid">
+                {% for item in my_items %}
+                <div class="item-card">
+                    <div class="item-image">📦</div>
+                    <div class="item-content">
+                        <span class="badge {% if item.category == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+                            {{ item.category|upper }}
+                        </span>
+                        <h3 class="item-title">{{ item.title }}</h3>
+                        <p class="item-meta">Status: {{ item.status }}</p>
+                        <a href="/item/{{ item.id }}?user_id={{ user.id }}" class="item-link">View Details →</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

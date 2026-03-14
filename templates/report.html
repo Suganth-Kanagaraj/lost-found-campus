@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Item - Campus Lost & Found</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f5f5f5; }
+        .navbar { background: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        .container { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+        .form-card { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-bottom: 0.5rem; }
+        .subtitle { color: #666; margin-bottom: 2rem; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1rem; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .upload-area { border: 2px dashed #ccc; padding: 2rem; text-align: center; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        .upload-area:hover { border-color: #667eea; background: #f9f9ff; }
+        .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
+        .btn { width: 100%; padding: 1rem; background: #667eea; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background: #5568d3; }
+        .category-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        .category-btn { padding: 1.5rem; text-align: center; border: 2px solid #e0e0e0; border-radius: 15px; cursor: pointer; transition: 0.3s; }
+        .category-btn:hover { border-color: #667eea; }
+        .category-btn.active { border-color: #667eea; background: #f0f4ff; }
+        .category-btn input { display: none; }
+        .category-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+        .category-label { font-weight: 600; color: #333; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🎓 Campus Lost & Found</div>
+    </nav>
+    
+    <div class="container">
+        <div class="form-card">
+            <h1>Report an Item</h1>
+            <p class="subtitle">Help reunite lost items with their owners</p>
+            
+            <form method="POST" enctype="multipart/form-data">
+                <div class="category-toggle">
+                    <label class="category-btn active">
+                        <input type="radio" name="category" value="lost" checked>
+                        <span class="category-icon">😢</span>
+                        <span class="category-label">I Lost Something</span>
+                    </label>
+                    <label class="category-btn">
+                        <input type="radio" name="category" value="found">
+                        <span class="category-icon">😊</span>
+                        <span class="category-label">I Found Something</span>
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>Item Title *</label>
+                    <input type="text" name="title" required placeholder="e.g., Blue Backpack, Silver Watch">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Category *</label>
+                        <select name="item_type" required>
+                            <option value="">Select category</option>
+                            <option value="electronics">📱 Electronics (Phone, Laptop, etc.)</option>
+                            <option value="books">📚 Books & Notes</option>
+                            <option value="wallet">👛 Wallet & Cards</option>
+                            <option value="keys">🔑 Keys</option>
+                            <option value="accessories">👓 Accessories (Watch, Jewelry)</option>
+                            <option value="clothing">👕 Clothing</option>
+                            <option value="bag">🎒 Bags & Backpacks</option>
+                            <option value="other">📦 Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Campus Area *</label>
+                        <select name="campus_area" required>
+                            <option value="">Select area</option>
+                            <option value="Library">📖 Library</option>
+                            <option value="Cafeteria">🍽️ Cafeteria</option>
+                            <option value="Hostel">🏠 Hostel</option>
+                            <option value="Classroom">🏫 Classroom Block</option>
+                            <option value="Lab">🔬 Computer Lab</option>
+                            <option value="Sports Ground">⚽ Sports Ground</option>
+                            <option value="Parking">🚗 Parking Area</option>
+                            <option value="Bus Stop">🚌 Bus Stop</option>
+                            <option value="Other">📍 Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" placeholder="Describe the item in detail - color, brand, unique features, etc."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Specific Location</label>
+                    <input type="text" name="location" placeholder="e.g., Near the 3rd floor staircase">
+                </div>
+                
+                <div class="form-group">
+                    <label>Upload Photo</label>
+                    <div class="upload-area" onclick="document.getElementById('image').click()">
+                        <div class="upload-icon">📷</div>
+                        <p>Click to upload a photo</p>
+                        <p style="color: #999; font-size: 0.9rem; margin-top: 0.5rem;">PNG, JPG up to 16MB</p>
+                        <input type="file" id="image" name="image" accept="image/*" style="display: none;">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn">Submit Report</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                this.querySelector('input').checked = true;
+            });
+        });
+        
+        document.getElementById('image').addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                document.querySelector('.upload-area p').textContent = '✓ ' + this.files[0].name;
+            }
+        });
+    </script>
+</body>
+</html>

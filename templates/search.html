@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search - Campus Lost & Found</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f5f5f5; }
+        .navbar { background: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+        .search-box { background: white; padding: 2rem; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .search-form { display: flex; gap: 1rem; }
+        .search-form input { flex: 1; padding: 1rem; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1rem; }
+        .search-form input:focus { outline: none; border-color: #667eea; }
+        .search-form select { padding: 0 1rem; border: 2px solid #e0e0e0; border-radius: 10px; }
+        .search-form button { padding: 1rem 2rem; background: #667eea; color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+        .filters { display: flex; gap: 1rem; margin-top: 1rem; }
+        .filter-btn { padding: 0.5rem 1rem; border: 2px solid #e0e0e0; border-radius: 20px; background: white; cursor: pointer; transition: 0.3s; }
+        .filter-btn.active { border-color: #667eea; background: #667eea; color: white; }
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .item-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1); transition: 0.3s; }
+        .item-card:hover { transform: translateY(-5px); }
+        .item-image { width: 100%; height: 200px; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+        .item-content { padding: 1.5rem; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-lost { background: #fee; color: #c00; }
+        .badge-found { background: #efe; color: #060; }
+        .item-title { margin: 0.5rem 0; color: #333; }
+        .item-meta { color: #666; font-size: 0.9rem; }
+        .item-link { display: block; text-decoration: none; color: #667eea; font-weight: 600; margin-top: 1rem; }
+        .no-results { text-align: center; padding: 3rem; color: #666; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🎓 Campus Lost & Found</div>
+        <div>
+            <a href="/" style="text-decoration: none; color: #333;">Home</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="search-box">
+            <form class="search-form" method="GET">
+                <input type="text" name="q" placeholder="Search for items..." value="{{ query }}">
+                <select name="category">
+                    <option value="all">All Items</option>
+                    <option value="lost" {% if category == 'lost' %}selected{% endif %}>Lost</option>
+                    <option value="found" {% if category == 'found' %}selected{% endif %}>Found</option>
+                </select>
+                <button type="submit">🔍 Search</button>
+            </form>
+        </div>
+        
+        <h2 style="color: #333; margin-bottom: 1.5rem;">
+            {% if query %}
+                Search results for "{{ query }}"
+            {% else %}
+                All Items
+            {% endif %}
+            ({{ items|length }})
+        </h2>
+        
+        {% if items %}
+        <div class="items-grid">
+            {% for item in items %}
+            <div class="item-card">
+                <div class="item-image">📦</div>
+                <div class="item-content">
+                    <span class="badge {% if item.category == 'lost' %}badge-lost{% else %}badge-found{% endif %}">
+                        {{ item.category|upper }}
+                    </span>
+                    <h3 class="item-title">{{ item.title }}</h3>
+                    <p class="item-meta">📍 {{ item.campus_area }}</p>
+                    <p class="item-meta">🏷️ {{ item.item_type }}</p>
+                    <a href="/item/{{ item.id }}" class="item-link">View Details →</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-results">
+            <p style="font-size: 2rem;">🔍</p>
+            <p>No items found. Try a different search term.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
