@@ -110,8 +110,23 @@
                 
                 {% if user %}
                 <div class="action-buttons">
-                    {% if item.category == 'found' %}
-                    <a href="#" class="btn btn-success">✅ Claim This Item</a>
+                    {% if item.user_id != user.id %}
+                        {% if item.category == 'found' and item.status != 'resolved' %}
+                        <form action="/item/{{ item.id }}/resolve" method="POST" style="display:inline;">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="btn btn-success">✅ Mark as Claimed</button>
+                        </form>
+                        {% endif %}
+                        <form action="/item/{{ item.id }}/contact" method="POST" style="display:inline;">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="btn">📧 Contact Owner</button>
+                        </form>
+                    {% else %}
+                        <a href="/item/{{ item.id }}/edit?user_id={{ user.id }}" class="btn">✏️ Edit</a>
+                        <form action="/item/{{ item.id }}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Delete this item?')">
+                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                            <button type="submit" class="btn" style="background:#dc3545;">🗑️ Delete</button>
+                        </form>
                     {% endif %}
                     <a href="/dashboard?user_id={{ user.id }}" class="btn">← Back to Dashboard</a>
                 </div>

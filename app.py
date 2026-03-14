@@ -353,6 +353,114 @@ def api_items():
     items = items.order_by(Item.created_at.desc()).limit(50).all()
     return jsonify([{'id': item.id, 'title': item.title, 'category': item.category, 'item_type': item.item_type, 'location': item.location, 'campus_area': item.campus_area, 'image': url_for('static', filename='uploads/' + item.image_path) if item.image_path else None, 'created_at': item.created_at.isoformat()} for item in items])
 
+# Edit Item
+@app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
+def edit_item(item_id):
+    item = Item.query.get_or_404(item_id)
+    user_id = request.args.get('user_id')
+    user = User.query.get(user_id) if user_id else None
+    
+    # Check ownership
+    if not user or item.user_id != user.id:
+        flash('You can only edit your own items.', 'error')
+        return redirect(url_for('dashboard', user_id=user_id))
+    
+    if request.method == 'POST':
+        item.title = request.form.get('title')
+        item.description = request.form.get('description')
+        item.item_type = request.form.get('item_type')
+        item.location = request.form.get('location')
+        item.campus_area = request.form.get('campus_area')
+        
+        # Handle new image upload
+        if 'image' in request.files and request.files['image'].filename:
+            file = request.files['image']
+            filename = secure_filename(str(uuid.uuid4()) + '_' + file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            item.image_path = filename
+            item.image_hash = get_image_hash(filepath)
+        
+        db.session.commit()
+        flash('Item updated successfully!', 'success')
+        return redirect(url_for('item_detail', item_id=item.id, user_id=user_id))
+    
+    return render_template('edit_item.html', item=item, user=user)
+
+# Delete Item
+@app.route('/item/<int:item_id>/delete', methods=['POST'])
+def delete_item(item_id):
+    item = Item.query.get_or_404(item_id)
+    user_id = request.form.get('user_id')
+    user = User.query.get(user_id) if user_id else None
+    
+    # Check ownership
+    if not user or item.user_id != user.id:
+        flash('You can only delete your own items.', 'error')
+        return redirect(url_for('dashboard', user_id=user_id))
+    
+    # Delete associated matches
+    Match.query.filter((Match.found_item_id == item_id) | (Match.lost_item_id == item_id)).delete()
+    
+    db.session.delete(item)
+    db.session.commit()
+    flash('Item deleted successfully!', 'success')
+    return redirect(url_for('dashboard', user_id=user_id))
+
+# Contact Item Owner (without showing phone)
+@app.route('/item/<int:item_id>/contact', methods=['POST'])
+def contact_owner(item_id):
+    item = Item.query.get_or_404(item_id)
+    user_id = request.form.get('user_id')
+    user = User.query.get(user_id) if user_id else None
+    
+    if not user:
+        flash('Please login to contact the owner.', 'error')
+        return redirect(url_for('login'))
+    
+    if item.user_id == user.id:
+        flash('This is your own item!', 'error')
+        return redirect(url_for('item_detail', item_id=item_id, user_id=user_id))
+    
+    # Get item owner info
+    owner = User.query.get(item.user_id)
+    
+    # Show contact info (without exposing phone publicly)
+    flash(f'Contact the owner at: {owner.email}', 'success')
+    return redirect(url_for('item_detail', item_id=item_id, user_id=user_id))
+
+# Mark Item as Resolved/Claimed
+@app.route('/item/<int:item_id>/resolve', methods=['POST'])
+def resolve_item(item_id):
+    item = Item.query.get_or_404(item_id)
+    user_id = request.form.get('user_id')
+    user = User.query.get(user_id) if user_id else None
+    
+    if not user:
+        flash('Please login to resolve items.', 'error')
+        return redirect(url_for('login'))
+    
+    item.status = 'resolved'
+    db.session.commit()
+    flash('Item marked as resolved!', 'success')
+    return redirect(url_for('dashboard', user_id=user_id))
+
+# User Profile
+@app.route('/profile')
+def profile():
+    user_id = request.args.get('user_id')
+    user = User.query.get(user_id) if user_id else None
+    if not user:
+        return redirect(url_for('login'))
+    
+    my_items = Item.query.filter_by(user_id=user_id).order_by(Item.created_at.desc()).all()
+    lost_count = Item.query.filter_by(user_id=user_id, category='lost').count()
+    found_count = Item.query.filter_by(user_id=user_id, category='found').count()
+    resolved_count = Item.query.filter_by(user_id=user_id, status='resolved').count()
+    
+    return render_template('profile.html', user=user, my_items=my_items, 
+                         lost_count=lost_count, found_count=found_count, resolved_count=resolved_count)
+
 with app.app_context():
     db.create_all()
 

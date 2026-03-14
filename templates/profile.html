@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Campus Lost & Found</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f5f5f5; }
+        .navbar { background: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        .nav-links a { text-decoration: none; color: #333; margin-left: 1.5rem; }
+        .container { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+        .profile-card { background: white; border-radius: 20px; padding: 2rem; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .profile-header { display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem; }
+        .avatar { width: 100px; height: 100px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; }
+        .profile-info h1 { color: #333; margin-bottom: 0.5rem; }
+        .profile-info p { color: #666; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: #f9f9f9; padding: 1.5rem; border-radius: 15px; text-align: center; }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #667eea; }
+        .stat-label { color: #666; font-size: 0.9rem; }
+        .section h2 { color: #333; margin-bottom: 1rem; }
+        .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+        .item-card { border: 2px solid #eee; border-radius: 12px; overflow: hidden; }
+        .item-card.resolved { opacity: 0.7; }
+        .item-header { padding: 1rem; background: #f9f9f9; display: flex; justify-content: space-between; align-items: center; }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-lost { background: #fee; color: #c00; }
+        .badge-found { background: #efe; color: #060; }
+        .badge-resolved { background: #ddd; color: #666; }
+        .item-body { padding: 1rem; }
+        .item-title { font-weight: bold; margin-bottom: 0.5rem; }
+        .item-meta { color: #666; font-size: 0.85rem; }
+        .item-actions { display: flex; gap: 0.5rem; padding: 1rem; border-top: 1px solid #eee; }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; font-size: 0.85rem; cursor: pointer; text-decoration: none; }
+        .btn-edit { background: #667eea; color: white; }
+        .btn-delete { background: #dc3545; color: white; }
+        .btn-view { background: #28a745; color: white; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🎓 Campus Lost & Found</div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/dashboard?user_id={{ user.id }}">Dashboard</a>
+            <a href="/">Logout</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar">👤</div>
+                <div class="profile-info">
+                    <h1>{{ user.name }}</h1>
+                    <p>📧 {{ user.email }}</p>
+                    <p>📱 {{ user.phone or 'Not provided' }}</p>
+                    <p>📅 Member since: {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Unknown' }}</p>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number">{{ my_items|length }}</div>
+                    <div class="stat-label">Total Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ lost_count }}</div>
+                    <div class="stat-label">Lost Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ found_count }}</div>
+                    <div class="stat-label">Found Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ resolved_count }}</div>
+                    <div class="stat-label">Resolved</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-card">
+            <div class="section">
+                <h2>📋 My Reported Items</h2>
+                {% if my_items %}
+                <div class="items-grid">
+                    {% for item in my_items %}
+                    <div class="item-card {% if item.status == 'resolved' %}resolved{% endif %}">
+                        <div class="item-header">
+                            <span class="badge {% if item.category == 'lost' %}badge-lost{% elif item.category == 'found' %}badge-found{% endif %}">
+                                {% if item.category == 'lost' %}🔴 Lost{% else %}🟢 Found{% endif %}
+                            </span>
+                            {% if item.status == 'resolved' %}
+                            <span class="badge badge-resolved">✓ Resolved</span>
+                            {% endif %}
+                        </div>
+                        <div class="item-body">
+                            <div class="item-title">{{ item.title }}</div>
+                            <div class="item-meta">📍 {{ item.campus_area or 'N/A' }}</div>
+                            <div class="item-meta">📅 {{ item.created_at.strftime('%Y-%m-%d') if item.created_at else '' }}</div>
+                        </div>
+                        <div class="item-actions">
+                            <a href="/item/{{ item.id }}?user_id={{ user.id }}" class="btn btn-view">View</a>
+                            <a href="/item/{{ item.id }}/edit?user_id={{ user.id }}" class="btn btn-edit">Edit</a>
+                            <form action="/item/{{ item.id }}/delete" method="POST" style="display:inline;">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <button type="submit" class="btn btn-delete" onclick="return confirm('Are you sure?')">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>You haven't reported any items yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

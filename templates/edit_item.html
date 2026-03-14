@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Item - Campus Lost & Found</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f5f5f5; }
+        .navbar { background: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #667eea; }
+        .container { max-width: 700px; margin: 2rem auto; padding: 0 1rem; }
+        .form-card { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: #333; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1rem; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .btn { padding: 1rem 2rem; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-primary:hover { background: #5568d3; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .button-group { display: flex; gap: 1rem; margin-top: 1.5rem; }
+        .current-image { margin-bottom: 1rem; }
+        .current-image img { max-width: 200px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">🎓 Campus Lost & Found</div>
+    </nav>
+    
+    <div class="container">
+        <div class="form-card">
+            <h1>✏️ Edit Item</h1>
+            
+            {% if item.image_path %}
+            <div class="current-image">
+                <p>Current Image:</p>
+                <img src="{{ url_for('static', filename='uploads/' + item.image_path) }}" alt="Current">
+            </div>
+            {% endif %}
+            
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label>📌 Item Title *</label>
+                    <input type="text" name="title" value="{{ item.title }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>📱 Item Type</label>
+                    <select name="item_type">
+                        <option value="">Select type...</option>
+                        <option value="Electronics" {% if item.item_type == 'Electronics' %}selected{% endif %}>📱 Electronics</option>
+                        <option value="Books" {% if item.item_type == 'Books' %}selected{% endif %}>📚 Books</option>
+                        <option value="Wallet" {% if item.item_type == 'Wallet' %}selected{% endif %}>👛 Wallet</option>
+                        <option value="ID Card" {% if item.item_type == 'ID Card' %}selected{% endif %}>🪪 ID Card</option>
+                        <option value="Clothing" {% if item.item_type == 'Clothing' %}selected{% endif %}>👕 Clothing</option>
+                        <option value="Keys" {% if item.item_type == 'Keys' %}selected{% endif %}>🔑 Keys</option>
+                        <option value="Water Bottle" {% if item.item_type == 'Water Bottle' %}selected{% endif %}>💧 Water Bottle</option>
+                        <option value="Other" {% if item.item_type == 'Other' %}selected{% endif %}>📦 Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>📍 Campus Area</label>
+                    <select name="campus_area">
+                        <option value="">Select area...</option>
+                        <option value="Library" {% if item.campus_area == 'Library' %}selected{% endif %}>📖 Library</option>
+                        <option value="Cafeteria" {% if item.campus_area == 'Cafeteria' %}selected{% endif %}>🍽️ Cafeteria</option>
+                        <option value="Main Building" {% if item.campus_area == 'Main Building' %}selected{% endif %}>🏢 Main Building</option>
+                        <option value="Hostel" {% if item.campus_area == 'Hostel' %}selected{% endif %}>🛏️ Hostel</option>
+                        <option value="Sports Ground" {% if item.campus_area == 'Sports Ground' %}selected{% endif %}>⚽ Sports Ground</option>
+                        <option value="Parking" {% if item.campus_area == 'Parking' %}selected{% endif %}>🚗 Parking</option>
+                        <option value="Classroom" {% if item.campus_area == 'Classroom' %}selected{% endif %}>🏫 Classroom</option>
+                        <option value="Other" {% if item.campus_area == 'Other' %}selected{% endif %}>📍 Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>📍 Specific Location</label>
+                    <input type="text" name="location" value="{{ item.location or '' }}" placeholder="e.g., Near the entrance">
+                </div>
+                
+                <div class="form-group">
+                    <label>📝 Description</label>
+                    <textarea name="description">{{ item.description or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>📸 Update Photo (Optional)</label>
+                    <input type="file" name="image" accept="image/*">
+                </div>
+                
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+                    <a href="/dashboard?user_id={{ user.id }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
