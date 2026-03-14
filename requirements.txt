@@ -4,3 +4,4 @@ Werkzeug>=3.0.0
 Pillow>=11.0.0
 imagehash>=4.3.0
 gunicorn>=21.0.0
+psycopg2-binary>=2.9.0

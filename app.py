@@ -1,5 +1,5 @@
 # Lost & Found Campus System
-# Requirements: Flask, Pillow, imagehash
+# Requirements: Flask, Pillow, imagehash, PostgreSQL
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -13,12 +13,22 @@ from datetime import datetime
 # Create necessary directories
 os.makedirs('static/uploads', exist_ok=True)
 
-# Use /tmp for Render
-db_path = '/tmp/lost_found.db' if os.path.exists('/tmp') else 'lost_found.db'
+# Database configuration - supports both SQLite and PostgreSQL
+# For PostgreSQL: Set DATABASE_URL environment variable
+# For SQLite: Uses local file (default for local dev)
+database_url = os.environ.get('DATABASE_URL')
 
-app = Flask(__name__)
+if database_url:
+    # Use PostgreSQL on Render
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # Use SQLite for local development
+    db_path = '/tmp/lost_found.db' if os.path.exists('/tmp') else 'lost_found.db'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
 app.config['SECRET_KEY'] = 'campus-lost-found-2026'
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
