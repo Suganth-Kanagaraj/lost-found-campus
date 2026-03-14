@@ -126,14 +126,15 @@
             
             {% for match in matches %}
             <div class="match-card">
-                {% if match.found_item.image_path if match.found_item else match.lost_item.image_path %}
-                <img class="match-image" src="{{ url_for('static', filename='uploads/' + (match.found_item.image_path if match.found_item else match.lost_item.image_path)) }}">
+                {% set match_item = match.found_item if match.found_item else match.lost_item %}
+                {% if match_item and match_item.image_path %}
+                <img class="match-image" src="{{ url_for('static', filename='uploads/' + match_item.image_path) }}">
                 {% else %}
                 <div class="match-image-placeholder">📦</div>
                 {% endif %}
                 <div style="flex: 1;">
-                    <strong>{{ (match.found_item.title if match.found_item else match.lost_item.title) }}</strong>
-                    <p>{{ (match.found_item.campus_area if match.found_item else match.lost_item.campus_area) }}</p>
+                    <strong>{{ match_item.title if match_item else 'Unknown' }}</strong>
+                    <p>{{ match_item.campus_area if match_item else '' }}</p>
                     <p style="font-size: 0.8rem; color: #666;">
                         {% if match.image_match %}🖼️ Image: {{ match.image_match }}%{% endif %}
                         {% if match.text_match %} | 📝 Text: {{ match.text_match }}%{% endif %}

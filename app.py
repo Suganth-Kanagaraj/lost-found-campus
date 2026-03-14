@@ -18,6 +18,9 @@ os.makedirs('static/uploads', exist_ok=True)
 # For SQLite: Uses local file (default for local dev)
 database_url = os.environ.get('DATABASE_URL')
 
+# Initialize Flask app first
+app = Flask(__name__)
+
 if database_url:
     # Use PostgreSQL on Render
     if database_url.startswith('postgres://'):
