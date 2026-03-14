@@ -59,35 +59,179 @@ class Match(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 def get_image_hash(image_path):
+    """
+    Enhanced image hashing using multiple algorithms for higher accuracy.
+    Uses: pHash (perceptual), dHash (difference), wHash (wavelet), aHash (average)
+    """
     try:
         img = Image.open(image_path)
-        hash_val = imagehash.phash(img)
-        return str(hash_val)
-    except:
+        
+        # Convert to RGB if needed
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Resize for consistent hashing
+        img = img.resize((512, 512), Image.LANCZOS)
+        
+        # Generate multiple hash types
+        phash = str(imagehash.phash(img))
+        dhash = str(imagehash.dhash(img))
+        whash = str(imagehash.whash(img))
+        ahash = str(imagehash.average_hash(img))
+        
+        # Combine all hashes into one string
+        combined_hash = f"{phash}|{dhash}|{whash}|{ahash}"
+        return combined_hash
+    except Exception as e:
+        print(f"Error generating hash: {e}")
         return None
 
 def calculate_similarity(hash1, hash2):
+    """
+    Enhanced similarity calculation using multiple hash comparison.
+    Higher accuracy by comparing multiple hash types.
+    """
     if not hash1 or not hash2:
         return 0
+    
     try:
-        h1 = imagehash.hex_to_hash(hash1)
-        h2 = imagehash.hex_to_hash(hash2)
-        similarity = 1 - (h1 - h2) / len(h1) * len(h2)
-        return max(0, similarity * 100)
+        # Split combined hashes
+        hashes1 = hash1.split('|')
+        hashes2 = hash2.split('|')
+        
+        if len(hashes1) < 4 or len(hashes2) < 4:
+            # Fallback to simple comparison
+            h1 = imagehash.hex_to_hash(hash1)
+            h2 = imagehash.hex_to_hash(hash2)
+            return max(0, (1 - (h1 - h2) / max(len(h1), len(h2)))) * 100
+        
+        total_similarity = 0
+        weights = [0.4, 0.25, 0.2, 0.15]  # Weight pHash higher as it's most accurate
+        
+        for i, (h1_str, h2_str) in enumerate(zip(hashes1[:4], hashes2[:4])):
+            try:
+                h1 = imagehash.hex_to_hash(h1_str)
+                h2 = imagehash.hex_to_hash(h2_str)
+                # Calculate similarity for this hash type
+                sim = (1 - (h1 - h2) / max(len(h1), len(h2)))
+                total_similarity += sim * weights[i]
+            except:
+                continue
+        
+        return max(0, total_similarity * 100)
+    except Exception as e:
+        print(f"Error calculating similarity: {e}")
+        return 0
+
+def get_color_histogram(image_path, bins=32):
+    """Extract color histogram for additional matching."""
+    try:
+        img = Image.open(image_path)
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Resize for consistency
+        img = img.resize((256, 256), Image.LANCZOS)
+        
+        # Get histogram for each channel
+        r_hist = img.histogram()[0:256]
+        g_hist = img.histogram()[256:512]
+        b_hist = img.histogram()[512:768]
+        
+        # Simplify histogram (reduce bins)
+        step = 256 // bins
+        r_bins = [sum(r_hist[i*step:(i+1)*step]) for i in range(bins)]
+        g_bins = [sum(g_hist[i*step:(i+1)*step]) for i in range(bins)]
+        b_bins = [sum(b_hist[i*step:(i+1)*step]) for i in range(bins)]
+        
+        return r_bins + g_bins + b_bins
+    except:
+        return None
+
+def color_histogram_similarity(hist1, hist2):
+    """Compare two color histograms using correlation."""
+    if not hist1 or not hist2 or len(hist1) != len(hist2):
+        return 0
+    
+    try:
+        # Simple correlation coefficient
+        n = len(hist1)
+        mean1 = sum(hist1) / n
+        mean2 = sum(hist2) / n
+        
+        numerator = sum((h1 - mean1) * (h2 - mean2) for h1, h2 in zip(hist1, hist2))
+        denom1 = sum((h - mean1) ** 2 for h in hist1) ** 0.5
+        denom2 = sum((h - mean2) ** 2 for h in hist2) ** 0.5
+        
+        if denom1 * denom2 == 0:
+            return 0
+        
+        correlation = numerator / (denom1 * denom2)
+        return max(0, correlation * 100)
     except:
         return 0
 
-def find_matches(item_id, item_hash):
+def calculate_text_similarity(text1, text2):
+    """Simple text similarity based on common words."""
+    if not text1 or not text2:
+        return 0
+    
+    words1 = set(text1.lower().split())
+    words2 = set(text2.lower().split())
+    
+    if not words1 or not words2:
+        return 0
+    
+    intersection = words1 & words2
+    union = words1 | words2
+    
+    return (len(intersection) / len(union)) * 100
+
+def find_matches(item_id, item_hash, item_description="", item_type=""):
+    """
+    Enhanced matching using multiple algorithms:
+    1. Multi-hash image similarity (50% weight)
+    2. Text similarity (30% weight)
+    3. Item type similarity (20% weight)
+    """
     if not item_hash:
         return []
-    all_items = Item.query.filter(Item.id != item_id, Item.status != 'resolved').all()
+    
+    all_items = Item.query.filter(
+        Item.id != item_id, 
+        Item.status != 'resolved'
+    ).all()
+    
     matches = []
     for item in all_items:
-        if item.category == item.category:
-            similarity = calculate_similarity(item_hash, item.image_hash)
-            if similarity > 60:
-                matches.append({'item': item, 'similarity': similarity})
-    return sorted(matches, key=lambda x: x['similarity'], reverse=True)[:5]
+        # Calculate image hash similarity (50%)
+        image_sim = calculate_similarity(item_hash, item.image_hash) if item.image_hash else 0
+        
+        # Calculate text similarity (30%)
+        text_sim = 0
+        if item_description and item.description:
+            text_sim = calculate_text_similarity(item_description, item.description)
+        
+        # Item type similarity (20%)
+        type_sim = 0
+        if item_type and item.item_type:
+            if item_type.lower() == item.item_type.lower():
+                type_sim = 100
+            elif item_type.lower() in item.item_type.lower() or item.item_type.lower() in item_type.lower():
+                type_sim = 50
+        
+        # Weighted final score
+        final_score = (image_sim * 0.5) + (text_sim * 0.3) + (type_sim * 0.2)
+        
+        if final_score > 55:
+            matches.append({
+                'item': item, 
+                'similarity': round(final_score, 1),
+                'image_match': round(image_sim, 1),
+                'text_match': round(text_sim, 1)
+            })
+    
+    return sorted(matches, key=lambda x: x['similarity'], reverse=True)[:10]
 
 @app.route('/')
 def index():
@@ -158,7 +302,7 @@ def report_item():
         db.session.add(new_item)
         db.session.commit()
         if image_hash:
-            matches = find_matches(new_item.id, image_hash)
+            matches = find_matches(new_item.id, image_hash, description, item_type)
             for match in matches:
                 new_match = Match(found_item_id=match['item'].id if match['item'].category == 'found' else new_item.id, lost_item_id=new_item.id if match['item'].category == 'found' else match['item'].id, similarity=match['similarity'])
                 db.session.add(new_match)
