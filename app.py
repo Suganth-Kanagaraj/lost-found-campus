@@ -11,6 +11,10 @@ from PIL import Image
 from datetime import datetime
 import json
 
+# Create necessary directories
+os.makedirs('static/uploads', exist_ok=True)
+os.makedirs('instance', exist_ok=True)
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'campus-lost-found-2026'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lost_found.db'
