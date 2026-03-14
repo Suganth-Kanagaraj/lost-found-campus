@@ -184,6 +184,134 @@ def color_histogram_similarity(hist1, hist2):
     except:
         return 0
 
+def extract_dominant_colors(image_path, num_colors=5):
+    """Extract dominant colors from an image using k-means clustering."""
+    try:
+        from PIL import Image
+        import numpy as np
+        
+        img = Image.open(image_path)
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        # Resize for faster processing
+        img = img.resize((100, 100))
+        img_array = np.array(img)
+        
+        # Reshape to list of pixels
+        pixels = img_array.reshape(-1, 3)
+        
+        # Simple color quantization using averaging
+        colors = {}
+        for pixel in pixels:
+            # Reduce color space by rounding
+            key = tuple((np.array(pixel) // 32) * 32)
+            colors[key] = colors.get(key, 0) + 1
+        
+        # Get top colors
+        sorted_colors = sorted(colors.items(), key=lambda x: x[1], reverse=True)
+        return [list(color[0]) for color in sorted_colors[:num_colors]]
+    except Exception as e:
+        print(f"Error extracting colors: {e}")
+        return None
+
+def color_similarity(colors1, colors2):
+    """Calculate similarity between two color palettes."""
+    if not colors1 or not colors2:
+        return 0
+    
+    try:
+        total_sim = 0
+        for c1 in colors1[:3]:
+            for c2 in colors2[:3]:
+                # Euclidean distance
+                dist = sum((a - b) ** 2 for a, b in zip(c1, c2)) ** 0.5
+                # Convert distance to similarity (0-100)
+                sim = max(0, 100 - dist)
+                total_sim += sim
+        
+        return total_sim / 9  # Average
+    except:
+        return 0
+
+def predict_category(title, description):
+    """AI-powered category prediction based on text."""
+    if not title:
+        return None
+    
+    text = (title + " " + (description or "")).lower()
+    
+    # Keyword-based category prediction
+    category_keywords = {
+        'Electronics': ['phone', 'laptop', 'computer', 'charger', 'headphone', 'earphone', 'watch', 'camera', 'tablet', 'airpods', 'power bank', 'usb', 'cable', 'electronic'],
+        'Books': ['book', 'notebook', 'notes', 'textbook', 'journal', 'dictionary', 'magazine', 'paper', 'assignment'],
+        'Wallet': ['wallet', 'money', 'cash', 'card', 'credit', 'debit', 'id card', 'license'],
+        'ID Card': ['id', 'card', 'student', 'badge', 'identity', 'pass', 'access'],
+        'Clothing': ['shirt', 'pant', 'dress', 'jacket', 'hoodie', 'shoe', 'sandal', 'cap', 'hat', 'clothes', 'uniform'],
+        'Keys': ['key', 'keychain', 'lock', '钥匙'],
+        'Water Bottle': ['bottle', 'water', ' flask', 'cup', 'tumbler', 'thermos'],
+        'Bag': ['bag', 'backpack', 'purse', 'wallet', 'pouch', 'bagpack'],
+        'Accessories': ['spectacles', 'glasses', 'sunglasses', 'jewelry', 'watch', 'ring', 'chain', 'earring']
+    }
+    
+    scores = {}
+    for category, keywords in category_keywords.items():
+        score = sum(1 for kw in keywords if kw in text)
+        if score > 0:
+            scores[category] = score
+    
+    if scores:
+        return max(scores.items(), key=lambda x: x[1])[0]
+    return 'Other'
+
+def get_ai_suggestions(item_id, title, description, item_type, campus_area):
+    """Get AI-powered suggestions for similar items."""
+    suggestions = []
+    
+    # Find similar items
+    all_items = Item.query.filter(
+        Item.id != item_id,
+        Item.status != 'resolved'
+    ).all()
+    
+    for item in all_items:
+        score = 0
+        
+        # Title similarity (30%)
+        if title and item.title:
+            title_sim = calculate_text_similarity(title, item.title)
+            score += title_sim * 0.3
+        
+        # Description similarity (20%)
+        if description and item.description:
+            desc_sim = calculate_text_similarity(description, item.description)
+            score += desc_sim * 0.2
+        
+        # Same category/type (25%)
+        if item_type and item.item_type:
+            if item_type.lower() == item.item_type.lower():
+                score += 25
+            elif item_type.lower() in item.item_type.lower() or item.item_type.lower() in item_type.lower():
+                score += 15
+        
+        # Same campus area (15%)
+        if campus_area and item.campus_area:
+            if campus_area.lower() == item.campus_area.lower():
+                score += 15
+        
+        # Time proximity (10%) - newer items more relevant
+        if item.created_at:
+            days_old = (datetime.utcnow() - item.created_at).days
+            if days_old < 7:
+                score += 10
+            elif days_old < 30:
+                score += 5
+        
+        if score > 30:
+            suggestions.append({'item': item, 'score': round(score, 1)})
+    
+    return sorted(suggestions, key=lambda x: x['score'], reverse=True)[:5]
+
 def calculate_text_similarity(text1, text2):
     """Simple text similarity based on common words."""
     if not text1 or not text2:
@@ -299,10 +427,19 @@ def report_item():
         description = request.form.get('description')
         category = request.form.get('category')
         item_type = request.form.get('item_type')
+        
+        # AI: Auto-predict category if not selected
+        if not item_type or item_type == '':
+            predicted = predict_category(title, description)
+            if predicted:
+                item_type = predicted
+        
         location = request.form.get('location')
         campus_area = request.form.get('campus_area')
         image_path = None
         image_hash = None
+        dominant_colors = None
+        
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename:
@@ -311,16 +448,22 @@ def report_item():
                 file.save(filepath)
                 image_path = filename
                 image_hash = get_image_hash(filepath)
+                # Extract dominant colors for AI matching
+                dominant_colors = extract_dominant_colors(filepath)
+        
         new_item = Item(title=title, description=description, category=category, item_type=item_type, location=location, campus_area=campus_area, image_path=image_path, image_hash=image_hash, user_id=user_id)
         db.session.add(new_item)
         db.session.commit()
+        
+        # AI Matching
         if image_hash:
             matches = find_matches(new_item.id, image_hash, description, item_type)
             for match in matches:
                 new_match = Match(found_item_id=match['item'].id if match['item'].category == 'found' else new_item.id, lost_item_id=new_item.id if match['item'].category == 'found' else match['item'].id, similarity=match['similarity'])
                 db.session.add(new_match)
             db.session.commit()
-        flash(f'{category.title()} item reported successfully!', 'success')
+        
+        flash(f'{category.title()} item reported! AI auto-categorized as: {item_type}', 'success')
         return redirect(url_for('dashboard', user_id=user_id))
     return render_template('report.html', user=user)
 
@@ -352,6 +495,51 @@ def api_items():
         items = items.filter_by(category=category)
     items = items.order_by(Item.created_at.desc()).limit(50).all()
     return jsonify([{'id': item.id, 'title': item.title, 'category': item.category, 'item_type': item.item_type, 'location': item.location, 'campus_area': item.campus_area, 'image': url_for('static', filename='uploads/' + item.image_path) if item.image_path else None, 'created_at': item.created_at.isoformat()} for item in items])
+
+# AI Suggestions API
+@app.route('/api/ai/suggestions')
+def ai_suggestions():
+    """Get AI-powered suggestions for an item."""
+    item_id = request.args.get('item_id', type=int)
+    if not item_id:
+        return jsonify({'error': 'item_id required'}), 400
+    
+    item = Item.query.get(item_id)
+    if not item:
+        return jsonify({'error': 'Item not found'}), 404
+    
+    suggestions = get_ai_suggestions(item.id, item.title, item.description, item.item_type, item.campus_area)
+    
+    return jsonify({
+        'item_id': item_id,
+        'suggestions': [
+            {
+                'id': s['item'].id,
+                'title': s['item'].title,
+                'category': s['item'].category,
+                'campus_area': s['item'].campus_area,
+                'score': s['score'],
+                'image': url_for('static', filename='uploads/' + s['item'].image_path) if s['item'].image_path else None
+            }
+            for s in suggestions
+        ]
+    })
+
+# AI Predict Category API
+@app.route('/api/ai/predict-category', methods=['POST'])
+def ai_predict_category():
+    """Predict category based on title and description."""
+    data = request.get_json()
+    title = data.get('title', '')
+    description = data.get('description', '')
+    
+    predicted = predict_category(title, description)
+    
+    return jsonify({
+        'title': title,
+        'predicted_category': predicted,
+        'confidence': 'high' if predicted != 'Other' else 'low'
+    })
 
 # Edit Item
 @app.route('/item/<int:item_id>/edit', methods=['GET', 'POST'])
