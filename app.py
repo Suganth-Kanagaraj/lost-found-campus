@@ -47,7 +47,8 @@ class Item(db.Model):
     status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    matches = db.relationship('Match', backref='item', lazy=True)
+    found_matches = db.relationship('Match', foreign_keys='Match.found_item_id', backref='found_item', lazy=True)
+    lost_matches = db.relationship('Match', foreign_keys='Match.lost_item_id', backref='lost_item', lazy=True)
 
 class Match(db.Model):
     id = db.Column(db.Integer, primary_key=True)
